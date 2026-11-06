@@ -22,7 +22,7 @@ import { Logo, Monogram } from "./Logo";
 import { Reveal } from "./Reveal";
 
 export function Newsletter() {
-  const { notify } = useShop();
+  const { notify, subscribe, newsletterEmails } = useShop();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "invalid" | "done">("idle");
 
@@ -33,6 +33,12 @@ export function Newsletter() {
       setStatus("invalid");
       return;
     }
+    if (newsletterEmails.includes(email.trim().toLowerCase())) {
+      setStatus("done");
+      notify("You’re already on the Symmify list.");
+      return;
+    }
+    subscribe(email);
     setStatus("done");
     notify("Welcome to Symmify — your first letter is on its way.");
   };
@@ -198,7 +204,9 @@ export function Footer() {
               ].map(({ icon: Icon, label }) => (
                 <a
                   key={label}
-                  href="#social"
+                  href={label === "Instagram" ? "https://www.instagram.com/symmify" : "#social"}
+                  target={label === "Instagram" ? "_blank" : undefined}
+                  rel={label === "Instagram" ? "noreferrer" : undefined}
                   aria-label={`Symmify on ${label}`}
                   className="grid h-9 w-9 place-items-center rounded-full border border-line-dark/70 bg-white text-navy transition-colors hover:border-sapphire hover:text-sapphire">
                   <Icon className="h-4 w-4" />
@@ -212,10 +220,11 @@ export function Footer() {
                 <Mail className="h-3.5 w-3.5 text-sapphire" /> symmify@gmail.com
               </a>
               <a
-                href="tel:+442079460018"
+                href="https://wa.me/919325646874?text=Hi%20Symmify%2C%20I%27m%20looking%20for%20a%20jewellery%20website.%20Could%20you%20please%20share%20more%20details%3F"
+                target="_blank"
+                rel="noreferrer"
                 className="flex items-center gap-2 transition-colors hover:text-sapphire">
-                <Phone className="h-3.5 w-3.5 text-sapphire" /> +44 (0)20 7946
-                0018
+                <Phone className="h-3.5 w-3.5 text-sapphire" /> WhatsApp: 9325646874
               </a>
               <p className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sapphire" />
@@ -330,9 +339,9 @@ export function Footer() {
               ))}
               <li>
                 <a
-                  href="mailto:care@symmify.com"
+                  href="mailto:symmify@gmail.com"
                   className="inline-flex items-center gap-1 transition-colors hover:text-sapphire">
-                  Contact us <ArrowUpRight className="h-3 w-3" />
+                  symmify@gmail.com <ArrowUpRight className="h-3 w-3" />
                 </a>
               </li>
             </ul>

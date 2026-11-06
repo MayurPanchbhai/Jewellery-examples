@@ -12,6 +12,15 @@ import { products, type Category, type Product } from "./data";
 
 export type Overlay = "cart" | "wishlist" | "search" | "menu" | null;
 export type BagLine = { id: string; qty: number };
+export type SavedOrder = {
+  id: string;
+  createdAt: string;
+  items: Array<{ id: string; name: string; image: string; qty: number; unitPrice: number; variant?: string }>;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  customer: { name: string; email: string; phone: string; address: string; city: string; postalCode: string; country: string };
+};
 export type Filter = "All" | Category;
 
 type Toast = { id: number; message: string; action?: "bag" };
@@ -24,6 +33,10 @@ type ShopContextValue = {
   removeFromBag: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
   clearBag: () => void;
+  orders: SavedOrder[];
+  placeOrder: (shipping: number, customer: SavedOrder["customer"]) => SavedOrder | null;
+  newsletterEmails: string[];
+  subscribe: (email: string) => void;
   wishlist: string[];
   toggleWishlist: (product: Product, options?: { openWishlist?: boolean }) => void;
   isWishlisted: (id: string) => boolean;
@@ -46,6 +59,8 @@ const ShopContext = createContext<ShopContextValue | null>(null);
 
 const BAG_KEY = "symmify.bag.v1";
 const WISH_KEY = "symmify.wishlist.v1";
+const ORDERS_KEY = "symmify.orders.v1";
+const NEWSLETTER_KEY = "symmify.newsletter.v1";
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -70,6 +85,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const stored = readStored<string[]>(WISH_KEY, []);
     return Array.isArray(stored) ? stored.filter((id) => products.some((p) => p.id === id)) : [];
   });
+  const [orders, setOrders] = useState<SavedOrder[]>(() => {
+    if (typeof window === "undefined") return [];
+    const stored = readStored<SavedOrder[]>(ORDERS_KEY, []);
+    return Array.isArray(stored) ? stored.filter((order) => order && typeof order.id === "string" && Array.isArray(order.items)) : [];
+  });
+  const [newsletterEmails, setNewsletterEmails] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    const stored = readStored<string[]>(NEWSLETTER_KEY, []);
+    return Array.isArray(stored) ? stored.filter((email) => typeof email === "string") : [];
+  });
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [quickView, setQuickView] = useState<Product | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
@@ -91,6 +116,14 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       /* storage unavailable */
     }
   }, [wishlist]);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); } catch { /* storage unavailable */ }
+  }, [orders]);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(NEWSLETTER_KEY, JSON.stringify(newsletterEmails)); } catch { /* storage unavailable */ }
+  }, [newsletterEmails]);
 
   const isLocked = overlay !== null || quickView !== null;
 
@@ -156,6 +189,31 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const clearBag = useCallback(() => setBag([]), []);
 
+  const placeOrder = useCallback((shipping: number, customer: SavedOrder["customer"]) => {
+    const items = bag.flatMap((line) => {
+      const product = products.find((item) => item.id === line.id);
+      return product ? [{ id: product.id, name: product.name, image: product.image, qty: line.qty, unitPrice: product.price }] : [];
+    });
+    if (!items.length) return null;
+    const order: SavedOrder = {
+      id: `SYM-${Math.floor(100000 + Math.random() * 899999)}`,
+      createdAt: new Date().toISOString(),
+      items,
+      subtotal: items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0),
+      shipping,
+      total: items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0) + shipping,
+      customer,
+    };
+    setOrders((current) => [order, ...current].slice(0, 50));
+    setBag([]);
+    return order;
+  }, [bag]);
+
+  const subscribe = useCallback((email: string) => {
+    const normalized = email.trim().toLowerCase();
+    if (normalized) setNewsletterEmails((current) => current.includes(normalized) ? current : [...current, normalized]);
+  }, []);
+
   const toggleWishlist = useCallback<ShopContextValue["toggleWishlist"]>(
     (product, options) => {
       const alreadySaved = wishlist.includes(product.id);
@@ -218,6 +276,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     removeFromBag,
     updateQty,
     clearBag,
+    orders,
+    placeOrder,
+    newsletterEmails,
+    subscribe,
     wishlist,
     toggleWishlist,
     isWishlisted: (id: string) => wishlistSet.has(id),

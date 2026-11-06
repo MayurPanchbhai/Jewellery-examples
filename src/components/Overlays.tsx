@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { categories, products, type Product } from "../data";
 import { money, useShop } from "../store";
 import { cn } from "../utils/cn";
@@ -176,11 +176,16 @@ export function CartDrawer() {
     openQuickView,
     shopCategory,
     freeShippingThreshold,
+    placeOrder,
+    orders,
   } = useShop();
-  const [placed, setPlaced] = useState<{ order: string; total: number; items: number } | null>(null);
+  const [placed, setPlaced] = useState<ReturnType<typeof placeOrder>>(null);
+  const [showOrders, setShowOrders] = useState(false);
+  const [checkout, setCheckout] = useState(false);
+  const [customer, setCustomer] = useState({ name: "", email: "", phone: "", address: "", city: "", postalCode: "", country: "" });
 
   useEffect(() => {
-    if (overlay !== "cart") setPlaced(null);
+    if (overlay !== "cart") { setPlaced(null); setShowOrders(false); setCheckout(false); }
   }, [overlay]);
 
   if (overlay !== "cart") return null;
@@ -198,20 +203,21 @@ export function CartDrawer() {
     setPlaced(null);
   };
 
-  const checkout = () => {
+  const beginCheckout = () => {
     if (lines.length === 0) return;
-    setPlaced({
-      order: `SYM-${Math.floor(100000 + Math.random() * 899999)}`,
-      total: subtotal + shipping,
-      items: bagCount,
-    });
-    clearBag();
+    setCheckout(true);
+  };
+
+  const submitCheckout = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const order = placeOrder(shipping, customer);
+    if (order) { setPlaced(order); setCheckout(false); }
   };
 
   return (
     <DrawerShell
-      title={placed ? "Your order" : "Your bag"}
-      eyebrow={placed ? "With pleasure" : `${bagCount} ${bagCount === 1 ? "piece" : "pieces"} selected`}
+      title={placed ? "Your order" : checkout ? "Delivery details" : showOrders ? "Order history" : "Your bag"}
+      eyebrow={placed ? "With pleasure" : checkout ? "Where should we send it?" : showOrders ? `${orders.length} saved ${orders.length === 1 ? "order" : "orders"}` : `${bagCount} ${bagCount === 1 ? "piece" : "pieces"} selected`}
       onClose={close}
       footer={
         placed ? (
@@ -222,6 +228,8 @@ export function CartDrawer() {
           >
             Continue exploring
           </button>
+        ) : checkout ? (
+          <div className="flex gap-3"><button type="button" onClick={() => setCheckout(false)} className="flex-1 border border-line py-3 text-[9px] font-medium uppercase tracking-[0.16em] text-navy">Back to bag</button><button form="checkout-form" type="submit" className="flex-[2] bg-navy py-3 text-[9px] font-medium uppercase tracking-[0.16em] text-white hover:bg-sapphire">Place order · {money(subtotal + shipping)}</button></div>
         ) : lines.length > 0 ? (
           <div>
             <div className="space-y-2 text-[11.5px]">
@@ -245,7 +253,7 @@ export function CartDrawer() {
             </div>
             <button
               type="button"
-              onClick={checkout}
+              onClick={beginCheckout}
               className="group mt-4 flex w-full items-center justify-center gap-2.5 bg-navy px-6 py-4 text-[10px] font-medium uppercase tracking-[0.2em] text-white transition hover:bg-sapphire"
             >
               <Lock className="h-3.5 w-3.5" />
@@ -264,10 +272,10 @@ export function CartDrawer() {
           <span className="grid h-16 w-16 place-items-center rounded-full bg-sky text-sapphire">
             <Check className="h-7 w-7" />
           </span>
-          <p className="eyebrow mt-5 text-sapphire">Order {placed.order}</p>
+          <p className="eyebrow mt-5 text-sapphire">Order {placed.id}</p>
           <h3 className="mt-2 font-serif text-[29px] leading-tight text-navy">Your pieces are reserved.</h3>
           <p className="mt-2 max-w-[19rem] text-[12px] font-light leading-relaxed text-stone">
-            {placed.items} {placed.items === 1 ? "piece" : "pieces"} · {money(placed.total)}. A confirmation
+            {placed.items.reduce((sum, item) => sum + item.qty, 0)} {placed.items.reduce((sum, item) => sum + item.qty, 0) === 1 ? "piece" : "pieces"} · {money(placed.total)}. A confirmation
             would normally reach your inbox within a few minutes.
           </p>
           <div className="mt-5 w-full rounded-sm border border-line bg-mist p-4 text-left">
@@ -283,15 +291,28 @@ export function CartDrawer() {
             Preview checkout · no payment has been taken
           </p>
         </div>
+      ) : checkout ? (
+        <form id="checkout-form" onSubmit={submitCheckout} className="space-y-4 px-5 py-5 sm:px-6">
+          <p className="text-[11px] leading-relaxed text-stone">Enter your contact and delivery details. Your order will be saved on this device.</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {([ ["name", "Full name", "text"], ["email", "Email address", "email"], ["phone", "Phone number", "tel"], ["address", "Street address", "text"], ["city", "City", "text"], ["postalCode", "Postal code", "text"], ["country", "Country", "text"] ] as const).map(([key, label, type]) => <label key={key} className={key === "address" ? "sm:col-span-2" : ""}><span className="mb-1 block text-[9px] font-medium uppercase tracking-[0.13em] text-navy">{label}</span><input required autoComplete={key === "postalCode" ? "postal-code" : key} type={type} value={customer[key]} onChange={(event) => setCustomer((current) => ({ ...current, [key]: event.target.value }))} className="w-full border border-line-dark/70 bg-white px-3 py-2.5 text-[12px] text-navy outline-none transition focus:border-sapphire" /></label>)}
+          </div>
+          <div className="border-t border-line pt-3 text-[11px] text-stone"><div className="flex justify-between"><span>{bagCount} items</span><span>{money(subtotal)}.00</span></div><div className="mt-1 flex justify-between"><span>Delivery</span><span>{shipping ? `${money(shipping)}.00` : "Complimentary"}</span></div><div className="mt-2 flex justify-between font-medium text-navy"><span>Total</span><span>{money(subtotal + shipping)}.00</span></div></div>
+          <p className="text-center text-[9px] uppercase tracking-[0.1em] text-stone">Demo checkout · no payment is taken</p>
+        </form>
+      ) : showOrders ? (
+        <div className="px-5 py-4">{orders.length ? <div className="divide-y divide-line">{orders.map((order) => <article key={order.id} className="py-4"><div className="flex items-start gap-3">{order.items[0] && <img src={order.items[0].image} alt="" className="h-16 w-14 object-cover" />}<div className="min-w-0 flex-1"><p className="text-[9px] uppercase tracking-[0.14em] text-sapphire">{order.id}</p><p className="mt-1 font-serif text-lg text-navy">{money(order.total)}.00</p><p className="mt-1 text-[10px] leading-relaxed text-stone">{order.items.map((item) => `${item.name} × ${item.qty}`).join(" · ")}</p><p className="mt-1 text-[9px] text-stone">{new Date(order.createdAt).toLocaleString()}</p></div></div></article>)}</div> : <p className="py-12 text-center text-[12px] text-stone">Your placed orders will appear here.</p>}<button type="button" onClick={() => setShowOrders(false)} className="mt-3 text-[9px] font-medium uppercase tracking-[0.15em] text-sapphire">Back to bag</button></div>
       ) : lines.length === 0 ? (
         <EmptyState
           icon={<Bag className="h-7 w-7" />}
           title="Your bag is waiting."
           copy="Discover quietly beautiful pieces, made to be worn every day and kept for a lifetime."
           primary={{ label: "Discover the collection", onClick: () => shopCategory("All") }}
+          secondary={{ label: `Order history (${orders.length})`, onClick: () => setShowOrders(true) }}
         />
       ) : (
         <div>
+          <div className="flex justify-end px-5 pt-3 sm:px-6"><button type="button" onClick={() => setShowOrders(true)} className="text-[9px] font-medium uppercase tracking-[0.14em] text-sapphire">Order history ({orders.length})</button></div>
           <div className="border-b border-line bg-mist px-5 py-3.5 sm:px-6">
             <p className="flex items-center gap-2 text-[10.5px] font-light text-navy">
               <Truck className="h-4 w-4 shrink-0 text-sapphire" />
@@ -616,7 +637,7 @@ export function SearchPanel() {
 
         <div className="flex items-center justify-between border-t border-line bg-mist px-5 py-3 sm:px-8">
           <p className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.12em] text-stone">
-            <Sparkle className="h-3.5 w-3.5 text-sapphire" /> Need help? care@symmify.com
+            <Sparkle className="h-3.5 w-3.5 text-sapphire" /> Need help? symmify@gmail.com
           </p>
           <span className="hidden text-[9px] uppercase tracking-[0.12em] text-stone sm:block">
             Press esc to close

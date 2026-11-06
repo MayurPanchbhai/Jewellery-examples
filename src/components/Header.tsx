@@ -102,7 +102,7 @@ export function Header() {
           </p>
           <div className="hidden items-center gap-5 text-sky/80 md:flex">
             <span>EN · USD $</span>
-            <a href="mailto:care@symmify.com" className="underline-link">
+            <a href="mailto:symmify@gmail.com" className="underline-link">
               Private appointments
             </a>
           </div>
@@ -340,8 +340,8 @@ export function Header() {
 
               <div className="mt-7 rounded-sm bg-mist p-4">
                 <p className="eyebrow text-sapphire">Client care</p>
-                <a href="mailto:care@symmify.com" className="mt-2 block font-serif text-lg text-navy">
-                  care@symmify.com
+                <a href="mailto:symmify@gmail.com" className="mt-2 block font-serif text-lg text-navy">
+                  symmify@gmail.com
                 </a>
                 <p className="mt-1 text-[11px] text-stone">Mon–Sat · 9am to 6pm GMT</p>
               </div>
@@ -352,7 +352,9 @@ export function Header() {
                   {[Instagram, Facebook, Pinterest].map((Icon, index) => (
                     <a
                       key={index}
-                      href="#social"
+                      href={index === 0 ? "https://www.instagram.com/symmify" : "#social"}
+                      target={index === 0 ? "_blank" : undefined}
+                      rel={index === 0 ? "noreferrer" : undefined}
                       onClick={closeOverlay}
                       className="grid h-9 w-9 place-items-center rounded-full border border-line text-navy transition hover:border-sapphire hover:text-sapphire"
                       aria-label={`Symmify on ${["Instagram", "Facebook", "Pinterest"][index]}`}

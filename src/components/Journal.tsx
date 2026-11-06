@@ -1,3 +1,5 @@
+/** @format */
+
 import { gallery } from "../data";
 import { useShop } from "../store";
 import { ArrowRight, ArrowUpRight, Instagram } from "./Icons";
@@ -39,14 +41,18 @@ export function Journal() {
               <span className="h-px w-7 bg-sapphire/50" /> The journal
             </p>
             <h2 className="mt-3 font-serif text-[34px] font-light leading-[1.04] text-navy sm:text-[43px]">
-              Notes on <span className="italic text-sapphire">wearing well</span>
+              Notes on{" "}
+              <span className="italic text-sapphire">wearing well</span>
             </h2>
           </div>
           <button
             type="button"
-            onClick={() => notify("The Symmify Journal launches next month — join the letter for first access.")}
-            className="group inline-flex w-fit items-center gap-2.5 border-b border-navy/25 pb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-navy transition-colors hover:border-sapphire hover:text-sapphire"
-          >
+            onClick={() =>
+              notify(
+                "The Symmify Journal launches next month — join the letter for first access.",
+              )
+            }
+            className="group inline-flex w-fit items-center gap-2.5 border-b border-navy/25 pb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-navy transition-colors hover:border-sapphire hover:text-sapphire">
             Read the journal
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
@@ -57,9 +63,12 @@ export function Journal() {
             <Reveal key={story.title} delay={index * 80}>
               <button
                 type="button"
-                onClick={() => notify("Journal story coming soon. Join the letter to be the first to read it.")}
-                className="group block w-full text-left"
-              >
+                onClick={() =>
+                  notify(
+                    "Journal story coming soon. Join the letter to be the first to read it.",
+                  )
+                }
+                className="group block w-full text-left">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[2px] bg-mist">
                   <img
                     src={story.image}
@@ -97,13 +106,21 @@ export function Gallery() {
       <div className="shell">
         <Reveal className="mx-auto max-w-lg text-center">
           <p className="eyebrow flex items-center justify-center gap-2 text-sapphire">
-            <Instagram className="h-3.5 w-3.5" /> @symmify.jewels
+            <a
+              href="https://www.instagram.com/symmify"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2">
+              <Instagram className="h-3.5 w-3.5" /> @symmify
+            </a>
           </p>
           <h2 className="mt-3 font-serif text-[32px] font-light leading-[1.06] text-navy sm:text-[40px]">
-            The world <span className="italic text-sapphire">through our lens</span>
+            The world{" "}
+            <span className="italic text-sapphire">through our lens</span>
           </h2>
           <p className="mt-3 text-[12.5px] font-light leading-relaxed text-stone">
-            Styling notes, atelier moments and the pieces you keep tagging us in.
+            Styling notes, atelier moments and the pieces you keep tagging us
+            in.
           </p>
         </Reveal>
 
@@ -112,10 +129,15 @@ export function Gallery() {
             <Reveal key={image.image + index} delay={index * 50}>
               <button
                 type="button"
-                onClick={() => notify("Follow @symmify.jewels — our social galleries are opening soon.")}
+                onClick={() =>
+                  window.open(
+                    "https://www.instagram.com/symmify",
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
                 className="group relative block aspect-square w-full overflow-hidden rounded-[2px] bg-line"
-                aria-label={`View Instagram image: ${image.alt}`}
-              >
+                aria-label={`View Instagram image: ${image.alt}`}>
                 <img
                   src={image.image}
                   alt={image.alt}
@@ -136,9 +158,14 @@ export function Gallery() {
         <div className="mt-7 flex justify-center">
           <button
             type="button"
-            onClick={() => notify("Follow @symmify.jewels — our social galleries are opening soon.")}
-            className="inline-flex items-center gap-2.5 border border-navy/25 bg-white px-6 py-3.5 text-[10px] font-medium uppercase tracking-[0.18em] text-navy transition-colors hover:border-sapphire hover:text-sapphire"
-          >
+            onClick={() =>
+              window.open(
+                "https://www.instagram.com/symmify",
+                "_blank",
+                "noopener,noreferrer",
+              )
+            }
+            className="inline-flex items-center gap-2.5 border border-navy/25 bg-white px-6 py-3.5 text-[10px] font-medium uppercase tracking-[0.18em] text-navy transition-colors hover:border-sapphire hover:text-sapphire">
             <Instagram className="h-4 w-4" /> Follow our journal
           </button>
         </div>
